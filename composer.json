@@ -1,0 +1,24 @@
+{
+    "name": "anhndn/mage-custom-errors",
+    "description": "Custom magento errors page",
+    "type": "composer-plugin",
+    "license": "MIT",
+    "require": {
+        "php": "^5.5 | ^7.0",
+        "composer-plugin-api": "~1.0"
+    },
+    "authors": [
+        {
+            "name": "Nguyen Duc Ngoc Anh",
+            "email": "anhndn@dtn.com.vn"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "AnhNDN\\MageCustomErrorPages\\": "src/"
+        }
+    },
+    "extra": {
+        "class": "\\AnhNDN\\MageCustomErrorPages\\Plugin"
+    }
+}
