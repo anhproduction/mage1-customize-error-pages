@@ -1,5 +1,5 @@
 {
-    "name": "anhndn/mage-custom-errors",
+    "name": "anhproduction/mage1-customize-error-pages",
     "description": "Custom magento errors page",
     "type": "composer-plugin",
     "license": "MIT",
