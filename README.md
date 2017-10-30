@@ -1,0 +1,1 @@
+# mage1-customize-error-pages
