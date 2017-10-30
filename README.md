@@ -1,7 +1,11 @@
-# mage1-customize-error-pages
+# Magento 1.x customize error pages
+
+#### Intro
 
 
-Module for overwrite folder errors of Magento install via composer
+Module for overwrite folder `errors` of Magento install via composer
 
-##Usage
-Add new folder `.custom-errors` for overwrite folder `errors`
+#### Usage
+
+
+Add new folder `.custom-errors` include subfolder, files which will overwrite for instated of folder `errors`
