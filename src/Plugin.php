@@ -4,7 +4,7 @@
  * @Author: anhproduction
  * @Date:   2017-10-27 16:22:09
  * @Last Modified by:   anhproduction
- * @Last Modified time: 2017-10-29 18:26:57
+ * @Last Modified time: 2017-10-30 15:42:18
  */
 namespace AnhNDN\MageCustomErrorPages;
 
@@ -13,7 +13,9 @@ use Composer\Script\Event;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Composer\Plugin\PluginInterface;
+use Composer\Installer\CommandEvent;
 use Composer\Installer\PackageEvent;
+use Composer\Installer\CommandEvents;
 use Composer\Installer\PackageEvents;
 use Composer\Installer\InstallerEvent;
 use Composer\Package\PackageInterface;
@@ -54,6 +56,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     protected $filesystem;
 
     /**
+     * @var isRemove
+     */
+    protected $isRemove = false;
+
+    /**
      * Output Prefix
      *
      * @var string
@@ -82,100 +89,125 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            InstallerEvents::POST_DEPENDENCIES_SOLVING => array(
-                array('checkCoreDependencies', 0)
+            'post-install-cmd' => array(
+                array('installCustomize', 0)
+            ),
+            'post-update-cmd' => array(
+                array('installCustomize', 0)
             ),
             PackageEvents::POST_PACKAGE_INSTALL => array(
-                array('installCore', 0)
-            ),
-            PackageEvents::PRE_PACKAGE_UPDATE => array(
-                array('uninstallCore', 0)
+                array('installPackageCustomize', 0)
             ),
             PackageEvents::POST_PACKAGE_UPDATE => array(
-                array('installCore', 0)
+                array('installPackageCustomize', 0)
             ),
             PackageEvents::PRE_PACKAGE_UNINSTALL => array(
-                array('uninstallCore', 0)
-            ),
+                 array('uninstallCustomize', 0)
+             ),
+        );
+    }
+
+    public function installCustomize($event)
+    {
+        if ($this->isRemove)                                      return;
+        if (file_exists($this->getMagentoCustomErrorBackupDir())) return;
+        if (!file_exists($this->getMagentoErrorDir()))            return;
+        if (!file_exists($this->getMagentoCustomErrorDir()))      return;
+
+        $this->io->write(
+            sprintf(
+                '%s<info>Installing...</info>',
+                $this->ioPrefix
+            )
+        );
+
+        $this->getInstaller()->install();
+
+        $this->io->write(
+            sprintf(
+                '%s<info>Done!</info>',
+                $this->ioPrefix
+            )
         );
     }
 
     /**
-     * Check that there have core package install
-     */
-    public function checkCoreDependencies(InstallerEvent $event)
-    {
-        $installedCorePackages = array();
-        foreach ($event->getInstalledRepo()->getPackages() as $package) {
-            if ($package->getType() === 'magento-core') {
-                $installedCorePackages[$package->getName()] = $package;
-            }
-        }
-
-        $operations = array_filter($event->getOperations(), function (OperationInterface $o) {
-            return in_array($o->getJobType(), array('install', 'uninstall'));
-        });
-
-        foreach ($operations as $operation) {
-            $p = $operation->getPackage();
-            switch ($operation->getJobType()) {
-                case "uninstall":
-                    unset($installedCorePackages[$p->getName()]);
-                    break;
-                case "install":
-                    $installedCorePackages[$p->getName()] = $p;
-                    break;
-            }
-        }
-    }
-
-
-    /**
      * @param PackageEvent $event
      */
-    public function installCore(PackageEvent $event)
+    public function installPackageCustomize(PackageEvent $event)
     {
-        if (file_exists($this->getMagentoErrorDir()) && file_exists($this->getMagentoCustomErrorDir()) && !file_exists($this->getMagentoCustomErrorBackupDir())) {
-            $this->io->write(
-                sprintf(
-                    '%s<info>Installing...</info>',
-                    $this->ioPrefix
-                )
-            );
-
-            $this->getInstaller()->install();
-
-            $this->io->write(
-                sprintf(
-                    '%s<info>Done!</info>',
-                    $this->ioPrefix
-                )
-            );
+        switch ($event->getOperation()->getJobType()) {
+            case "install":
+                $package = $event->getOperation()->getPackage();
+                break;
+            case "update":
+                $package = $event->getOperation()->getTargetPackage();
+                break;
         }
+
+        if (!isset($package)) return;
+        $extra = $package->getExtra();
+
+        if (!isset($extra) || !is_array($extra)) return;
+        if (!isset($extra['class']))             return;
+        if (!is_string($extra['class']))         return;
+        $class = ltrim($extra['class'], "\\");
+
+        if ($class != get_class($this))                     return;
+        if (file_exists($this->getMagentoErrorDir()))       return;
+        if (file_exists($this->getMagentoCustomErrorDir())) return;
+
+        $this->io->write(
+            sprintf(
+                '%s<info>Installing...</info>',
+                $this->ioPrefix
+            )
+        );
+
+        $this->getInstaller()->install();
+
+        $this->io->write(
+            sprintf(
+                '%s<info>Done!</info>',
+                $this->ioPrefix
+            )
+        );
     }
 
     /**
      * @param PackageEvent $event
      */
-    public function uninstallCore(PackageEvent $event)
+    public function uninstallCustomize(PackageEvent $event)
     {
-        if (file_exists($this->getMagentoErrorDir()) && file_exists($this->getMagentoCustomErrorBackupDir())) {
-            $this->io->write(
-                sprintf(
-                    '%s<info>Removing</info>',
-                    $this->ioPrefix
-                )
-            );
+        if ($event->getOperation()->getJobType() !== "uninstall") return;
 
-            $this->getInstaller()->unInstall();
+        $extra = $event->getOperation()->getPackage()->getExtra();
 
-            $this->io->write(
-                sprintf(
-                    '%s<info>Done!</info>',
-                    $this->ioPrefix
-                )
-            );
-        }
+        if (!$extra || !is_array($extra)) return;
+        if (!isset($extra['class']))      return;
+        if (!is_string($extra['class']))  return;
+        $class = ltrim($extra['class'], "\\");
+
+        if ($class == get_class($this))                            return;
+        if (!file_exists($this->getMagentoErrorDir()))             return;
+        if (!file_exists($this->getMagentoCustomErrorBackupDir())) return;
+
+        $this->io->write(
+            sprintf(
+                '%s<info>Removing</info>',
+                $this->ioPrefix
+            )
+        );
+
+        $this->getInstaller()->unInstall();
+
+        $this->io->write(
+            sprintf(
+                '%s<info>Done!</info>',
+                $this->ioPrefix
+            )
+        );
+        $this->isRemove = true;
     }
 
     /**
@@ -185,18 +217,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     {
         $installer = new Installer($this->filesystem, $this->getMagentoRootDir());
         return $installer;
-    }
-
-    /**
-     * Create root directory if it doesn't exist already
-     *
-     * @param string $dir
-     */
-    private function ensureDirExists($dir)
-    {
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
-        }
     }
 
     /**

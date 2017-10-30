@@ -155,7 +155,6 @@ class Installer
     public function unInstall()
     {
         $destination = $this->getMagentoErrorDir();
-        $source      = $this->getMagentoCustomErrorDir();
         $backup      = $this->getMagentoCustomErrorBackupDir();
 
         $iterator = $this->getIterator($backup, RecursiveIteratorIterator::CHILD_FIRST);
