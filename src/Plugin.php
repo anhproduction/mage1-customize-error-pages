@@ -3,8 +3,8 @@
 /**
  * @Author: anhproduction
  * @Date:   2017-10-27 16:22:09
- * @Last Modified by:   anhproduction
- * @Last Modified time: 2017-10-30 15:42:18
+ * @Last Modified by:   Nguyen Duc Ngoc Anh
+ * @Last Modified time: 2017-10-30 16:52:32
  */
 namespace AnhNDN\MageCustomErrorPages;
 
@@ -56,9 +56,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     protected $filesystem;
 
     /**
-     * @var isRemove
+     * @var string
      */
-    protected $isRemove = false;
+    protected $isInstall = true;
 
     /**
      * Output Prefix
@@ -109,7 +109,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function installCustomize($event)
     {
-        if ($this->isRemove)                                      return;
+        if ($this->isInstalled())                                   return;
+        if (!$this->isInstall)                                    return;
         if (file_exists($this->getMagentoCustomErrorBackupDir())) return;
         if (!file_exists($this->getMagentoErrorDir()))            return;
         if (!file_exists($this->getMagentoCustomErrorDir()))      return;
@@ -157,21 +158,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         if (file_exists($this->getMagentoErrorDir()))       return;
         if (file_exists($this->getMagentoCustomErrorDir())) return;
 
-        $this->io->write(
-            sprintf(
-                '%s<info>Installing...</info>',
-                $this->ioPrefix
-            )
-        );
-
-        $this->getInstaller()->install();
-
-        $this->io->write(
-            sprintf(
-                '%s<info>Done!</info>',
-                $this->ioPrefix
-            )
-        );
+        $this->isInstall = true;
     }
 
     /**
@@ -188,7 +175,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         if (!is_string($extra['class']))  return;
         $class = ltrim($extra['class'], "\\");
 
-        if ($class == get_class($this))                            return;
+        if ($class != get_class($this))                            return;
         if (!file_exists($this->getMagentoErrorDir()))             return;
         if (!file_exists($this->getMagentoCustomErrorBackupDir())) return;
 
@@ -207,7 +194,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 $this->ioPrefix
             )
         );
-        $this->isRemove = true;
+        $this->isInstall = false;
     }
 
     /**
@@ -249,5 +236,13 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public function getMagentoCustomErrorBackupDir()
     {
         return $this->getMagentoCustomErrorDir() . DIRECTORY_SEPARATOR . '.backup-errors';
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isInstalled()
+    {
+        return file_exists($this->getMagentoErrorDir() . DIRECTORY_SEPARATOR . '.isInstalled');
     }
 }

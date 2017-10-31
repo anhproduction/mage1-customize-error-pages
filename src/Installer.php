@@ -144,6 +144,7 @@ class Installer
             $this->saveGitIgnore();
             file_put_contents($source . DIRECTORY_SEPARATOR . '.htaccess', "Deny from all");
             file_put_contents($backup . DIRECTORY_SEPARATOR . '.htaccess', "Deny from all");
+            file_put_contents($destination . DIRECTORY_SEPARATOR . '.isInstalled', true);
         } catch(Exception $e) {
             #code
         }
@@ -193,6 +194,7 @@ class Installer
         $this->fileSystem->removeDirectory($backup);
         $this->removeGitIgnore(ltrim($backup, $this->rootDir));
         $this->saveGitIgnore();
+        $this->fileSystem->unlink($destination . DIRECTORY_SEPARATOR . '.isInstalled');
     }
 
     /**
