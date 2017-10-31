@@ -9,3 +9,9 @@ Module for overwrite folder `errors` of Magento install via composer
 
 
 Add new folder `.custom-errors` include subfolder, files which will overwrite for instated of folder `errors`
+
+
+#### Note
+
+
+Ncustomize for deploy script
