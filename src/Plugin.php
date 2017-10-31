@@ -109,7 +109,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function installCustomize($event)
     {
-        if ($this->isInstalled())                                   return;
+        if ($this->isInstalled())                                 return;
         if (!$this->isInstall)                                    return;
         if (file_exists($this->getMagentoCustomErrorBackupDir())) return;
         if (!file_exists($this->getMagentoErrorDir()))            return;
