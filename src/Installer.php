@@ -4,7 +4,7 @@
  * @Author: anhproduction
  * @Date:   2017-10-27 16:22:09
  * @Last Modified by:   anhproduction
- * @Last Modified time: 2017-10-30 09:13:48
+ * @Last Modified time: 2017-11-01 13:23:25
  */
 namespace AnhNDN\MageCustomErrorPages;
 
@@ -79,30 +79,30 @@ class Installer
 
         if (!file_exists($backup)) {
             mkdir($backup);
-        }
-        $iteratorBackup = $this->getIterator($destination, RecursiveIteratorIterator::SELF_FIRST);
-        foreach ($iteratorBackup as $item) {
+            $iteratorBackup = $this->getIterator($destination, RecursiveIteratorIterator::SELF_FIRST);
+            foreach ($iteratorBackup as $item) {
 
-            $destinationFile = sprintf("%s/%s", $backup, $iteratorBackup->getSubPathName());
-            if ($item->isDir()) {
-                $fileExists = file_exists($destinationFile);
-                if (!$fileExists && is_link($destinationFile)) {
-                    throw new \RuntimeException(
-                        sprintf(
-                            'File: "%s" appears to be a broken symlink referencing: "%s"',
-                            $destinationFile,
-                            readlink($destinationFile)
-                        )
-                    );
+                $destinationFile = sprintf("%s/%s", $backup, $iteratorBackup->getSubPathName());
+                if ($item->isDir()) {
+                    $fileExists = file_exists($destinationFile);
+                    if (!$fileExists && is_link($destinationFile)) {
+                        throw new \RuntimeException(
+                            sprintf(
+                                'File: "%s" appears to be a broken symlink referencing: "%s"',
+                                $destinationFile,
+                                readlink($destinationFile)
+                            )
+                        );
+                    }
+
+                    if (!$fileExists) {
+                        mkdir($destinationFile);
+                    }
+                    continue;
                 }
 
-                if (!$fileExists) {
-                   mkdir($destinationFile);
-                }
-                continue;
+                copy($item, $destinationFile);
             }
-
-            copy($item, $destinationFile);
         }
         
         $iterator = $this->getIterator($source, RecursiveIteratorIterator::SELF_FIRST);
@@ -143,8 +143,6 @@ class Installer
             $this->addGitIgnore(ltrim($backup, $this->rootDir));
             $this->saveGitIgnore();
             file_put_contents($source . DIRECTORY_SEPARATOR . '.htaccess', "Deny from all");
-            file_put_contents($backup . DIRECTORY_SEPARATOR . '.htaccess', "Deny from all");
-            file_put_contents($destination . DIRECTORY_SEPARATOR . '.isInstalled', true);
         } catch(Exception $e) {
             #code
         }
@@ -194,7 +192,6 @@ class Installer
         $this->fileSystem->removeDirectory($backup);
         $this->removeGitIgnore(ltrim($backup, $this->rootDir));
         $this->saveGitIgnore();
-        $this->fileSystem->unlink($destination . DIRECTORY_SEPARATOR . '.isInstalled');
     }
 
     /**
