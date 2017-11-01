@@ -3,8 +3,8 @@
 /**
  * @Author: anhproduction
  * @Date:   2017-10-27 16:22:09
- * @Last Modified by:   Nguyen Duc Ngoc Anh
- * @Last Modified time: 2017-10-30 16:52:32
+ * @Last Modified by:   anhproduction
+ * @Last Modified time: 2017-11-01 13:31:18
  */
 namespace AnhNDN\MageCustomErrorPages;
 
@@ -56,9 +56,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     protected $filesystem;
 
     /**
-     * @var string
+     * @var boolean
      */
     protected $isInstall = true;
+
+    /**
+     * @var boolean
+     */
+    protected $isInstalled = false;
 
     /**
      * Output Prefix
@@ -109,9 +114,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function installCustomize($event)
     {
-        if ($this->isInstalled())                                 return;
         if (!$this->isInstall)                                    return;
-        if (file_exists($this->getMagentoCustomErrorBackupDir())) return;
+        if ($this->isInstalled)                                   return;
         if (!file_exists($this->getMagentoErrorDir()))            return;
         if (!file_exists($this->getMagentoCustomErrorDir()))      return;
 
@@ -130,6 +134,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 $this->ioPrefix
             )
         );
+        $this->isInstalled = true;
     }
 
     /**
@@ -158,7 +163,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         if (file_exists($this->getMagentoErrorDir()))       return;
         if (file_exists($this->getMagentoCustomErrorDir())) return;
 
-        $this->isInstall = true;
+        $this->isInstalled = true;
     }
 
     /**
